@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>测一测，TA是不是也在偷偷喜欢你</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"PingFang SC",system-ui,sans-serif}
+body{background:#fff3f8;color:#333;padding:16px}
+.container{max-width:420px;margin:0 auto}
+/*首页*/
+.home{display:block}
+.home .card{background:#fff;border-radius:20px;padding:28px 22px;text-align:center;box-shadow:0 4px 16px #ffd6e6}
+.home h1{font-size:24px;color:#d84b84;margin-bottom:8px}
+.home .sub{color:#777;font-size:15px;margin-bottom:20px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:24px}
+.tag{background:#ffe6f0;color:#c83b72;padding:6px 10px;border-radius:99px;font-size:13px}
+.btn{width:100%;padding:14px;border:none;border-radius:99px;background:#d84b84;color:white;font-size:17px;font-weight:bold;cursor:pointer;margin-bottom:16px}
+.btn:active{opacity:0.9}
+.tip{font-size:12px;color:#999}
+/*题目页*/
+.question-wrap{display:none}
+.q-title{font-size:16px;font-weight:500;margin-bottom:16px;line-height:1.5}
+.q-index{color:#d84b84;font-size:14px;margin-bottom:4px}
+.opt{display:block;width:100%;text-align:left;padding:12px 14px;margin:8px 0;border:1px solid #ffd6e6;border-radius:14px;background:#fff;cursor:pointer;font-size:15px}
+.opt:hover{background:#ffe6f0}
+/*结果页*/
+.result-wrap{display:none}
+.res-card{background:#fff;border-radius:20px;padding:28px 22px;text-align:center;box-shadow:0 4px 16px #ffd6e6}
+.res-title{font-size:22px;color:#d84b84;font-weight:bold;margin-bottom:12px}
+.res-desc{font-size:15px;line-height:1.7;color:#555;margin-bottom:24px}
+.restart{background:#d84b84;color:white;border:none;padding:12px 24px;border-radius:99px;font-size:16px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="container">
+  <!--首页-->
+  <div class="home" id="home">
+    <div class="card">
+      <h1>测一测，TA是不是也在偷偷喜欢你</h1>
+      <p class="sub">凭你的心动细节，匹配TA的真实心意</p>
+      <div class="tags">
+        <span class="tag">心动细节|每个举动都有答案</span>
+        <span class="tag">聊天温度|回复速度藏着态度</span>
+        <span class="tag">暧昧浓度|你们现在到哪一步</span>
+        <span class="tag">心意解读|TA心里到底怎么看你</span>
+      </div>
+      <button class="btn" onclick="startTest()">点击测试</button>
+      <p class="tip">趣味测试仅供娱乐，别拿结果去质问他</p>
+    </div>
+  </div>
+
+  <!--答题区域-->
+  <div class="question-wrap" id="qWrap">
+    <div class="q-index" id="qIndex"></div>
+    <div class="q-title" id="qTitle"></div>
+    <div id="optBox"></div>
+  </div>
+
+  <!--结果页-->
+  <div class="result-wrap" id="resWrap">
+    <div class="res-card">
+      <div class="res-title" id="resTitle"></div>
+      <div class="res-desc" id="resDesc"></div>
+      <button class="restart" onclick="restart()">重新测试</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// 结果池：key对应编号
+const resultMap = {
+  1:{name:"双向奔赴型",desc:"你俩就差一个人先开口。心意双向在线，彼此都动心，默契拉满！就等一个合适时机捅破窗户纸，谁先迈出那一步都很甜。"},
+  2:{name:"偷偷暗恋型",desc:"TA也喜欢你，只是不敢说。TA心里装着你，但是胆小怕出错，害怕说了之后连朋友都做不成，所有温柔都藏在细节里，默默喜欢你。"},
+  3:{name:"友达以上型",desc:"再靠近一点就变味了。好感已经超过普通朋友，氛围甜甜的，只差一点点心动推力，稍微主动一点，很容易升级！"},
+  4:{name:"慢热观望型",desc:"有感觉，但还在观察你。TA对你不反感，有基础好感，只是节奏很慢，需要时间慢慢确认你的人品和适配度，别急着催结果。"},
+  5:{name:"故作镇定型",desc:"嘴上说没有，身体很诚实。嘴上嘴硬，不肯承认动心，但是眼神、小动作、情绪骗不了人，一碰到和你相关的事就容易失控。"},
+  6:{name:"纯友谊型",desc:"TA真的只把你当朋友。TA对你是舒服自在的朋友感，没有恋爱心动，珍惜这份舒服的友情，别过度脑补暧昧信号哦。"},
+  7:{name:"暧昧拉扯型",desc:"享受这个过程，就是不表态。TA很喜欢当下这种甜甜的拉扯感，喜欢和你相处，但暂时不想确定关系，喜欢自由，不想被绑定。"},
+  8:{name:"礼貌友好型",desc:"TA对谁都这样，别多想。TA本身性格温柔体贴，待人友善，这套温柔是通用款，不是专门给你的偏爱，礼貌不等于心动。"},
+  9:{name:"信号错位型",desc:"你的心动，TA根本没接收到。你疯狂释放好感，但是TA完全没读懂你的暗示，两个人不在同一个频道，你的心意暂时传不到TA那边。"},
+  10:{name:"时机未到型",desc:"有戏，但眼下不是时候。TA对你有好感，但是当下有别的事情要忙、或者现实条件不适合谈恋爱，好感是真的，只是现在不合适。"}
+};
+
+// 32道题目，每个选项绑定结果编号
+const questions = [
+  {q:"TA凌晨两点回你消息，你会怎么想?",opts:[
+    {txt:"心里一直惦记我",score:1},
+    {txt:"特意熬到很晚等我消息",score:2},
+    {txt:"刚好没睡，乐意跟我唠",score:3},
+    {txt:"只是刚好失眠随手回",score:8}
+  ]},
+  {q:"你们聊天记录里，谁更常先结尾",opts:[
+    {txt:"两个人都舍不得收尾，轮流拖话题",score:1},
+    {txt:"大多是TA，怕聊太久打扰你",score:2},
+    {txt:"偶尔TA收尾，偶尔你收尾",score:3},
+    {txt:"基本都是TA结束，不延伸话题",score:6}
+  ]},
+  {q:"TA发朋友圈，你大概多久点赞",opts:[
+    {txt:"刷到立刻点，还会主动评论",score:9},
+    {txt:"犹豫一会，悄悄点赞不留言",score:2},
+    {txt:"随缘刷到才点，想到就评一句",score:6},
+    {txt:"专门等一会再点赞，不想太显眼",score:5}
+  ]},
+  {q:"TA约你吃饭，理由通常是哪种",opts:[
+    {txt:"想单独和你待一会，没有别的借口",score:1},
+    {txt:"找小借口：刚好有空、这家店好吃",score:2},
+    {txt:"顺路/正好要吃饭，喊上你一起",score:3},
+    {txt:"大家一起聚餐，顺便叫上你",score:8}
+  ]},
+  {q:"TA在共同朋友面前提起你的频率",opts:[
+    {txt:"经常主动说起你，聊到你就开心",score:1},
+    {txt:"别人提到你，TA会认真接话，很少主动提",score:2},
+    {txt:"偶尔提到，话题到你才说两句",score:3},
+    {txt:"很少主动提，和提起其他人一样平淡",score:6}
+  ]},
+  {q:"你们闲聊时，TA会不会主动延伸新话题",opts:[
+    {txt:"你一句TA一句，源源不断抛新话题",score:1},
+    {txt:"你停了TA就会找新话题，怕冷场",score:2},
+    {txt:"感兴趣就延伸，没兴趣就简短回复",score:4},
+    {txt:"你不找话题，对话很快就结束",score:9}
+  ]},
+  {q:"TA记住你的小喜好吗（奶茶甜度、忌口等）",opts:[
+    {txt:"记得清清楚楚，还会主动照顾你",score:1},
+    {txt:"默默记着，不会特意说出来",score:2},
+    {txt:"你说过才记住，不说就容易忘",score:4},
+    {txt:"听过就忘，需要你反复说",score:8}
+  ]},
+  {q:"TA回消息的状态，更接近？",opts:[
+    {txt:"看到就回，长篇碎碎念分享日常",score:1},
+    {txt:"看到会认真回，但不会秒回，斟酌措辞",score:2},
+    {txt:"有空就回，忙起来会隔很久，会解释",score:4},
+    {txt:"统一礼貌回复，对所有人都差不多",score:8}
+  ]},
+  {q:"开玩笑说要找对象，TA的反应？",opts:[
+    {txt:"会吃醋、会试探，直白表达在意",score:1},
+    {txt:"安静、转移话题，有点不自在",score:5},
+    {txt:"跟着起哄，顺便问问你的标准",score:3},
+    {txt:"真心祝福你，帮你出主意",score:6}
+  ]},
+  {q:"单独相处的时候，TA眼神会？",opts:[
+    {txt:"经常看向你，对视不躲闪，带笑意",score:1},
+    {txt:"偷偷看你，被你抓到就马上移开视线",score:2},
+    {txt:"自然对视，像普通好朋友一样",score:3},
+    {txt:"很少对视，习惯性看向别处",score:9}
+  ]},
+  {q:"TA会不会主动分享细碎日常（晚霞、路边小猫）",opts:[
+    {txt:"一遇到有意思的事第一时间发给你",score:1},
+    {txt:"偶尔分享，纠结很久才发出去",score:2},
+    {txt:"想到就发，很多朋友都会收到分享",score:6},
+    {txt:"很少主动分享，都是你发给TA",score:9}
+  ]},
+  {q:"你主动找TA，TA会不会推脱见面？",opts:[
+    {txt:"只要有空，优先赴你的约",score:1},
+    {txt:"有空就来，没空会约下次补偿你",score:4},
+    {txt:"看心情，想出门就答应",score:7},
+    {txt:"大多会婉拒，理由很客气",score:8}
+  ]},
+  {q:"TA会不会记住你随口说的小事",opts:[
+    {txt:"隔很久还记得，突然给你惊喜",score:1},
+    {txt:"悄悄记着，不声张，适时关心你",score:2},
+    {txt:"当时记住，过段时间就淡忘",score:4},
+    {txt:"听过就划过，没有印象",score:8}
+  ]},
+  {q:"聊天到很晚，TA会催你睡觉吗",opts:[
+    {txt:"舍不得结束，但会心疼你熬夜，催你休息",score:1},
+    {txt:"一边催你睡觉，一边还舍不得结束对话",score:2},
+    {txt:"到点就提醒，朋友之间常规关心",score:6},
+    {txt:"你不睡TA就陪，不主动提结束",score:7}
+  ]},
+  {q:"TA夸你的时候，风格是？",opts:[
+    {txt:"直白热烈，经常认真夸你",score:1},
+    {txt:"含蓄小声夸，很少当众说",score:5},
+    {txt:"客套式夸奖，礼貌暖心",score:8},
+    {txt:"很少夸你，但是会肯定你的想法",score:4}
+  ]},
+  {q:"你情绪低落找TA，TA会？",opts:[
+    {txt:"放下手头事，耐心陪你，哄你开心",score:1},
+    {txt:"认真倾听，小心翼翼安慰，怕说错话",score:2},
+    {txt:"简单安慰几句，不会过度投入情绪",score:6},
+    {txt:"礼貌回复，不会深入共情",score:8}
+  ]},
+  {q:"你们有专属小梗、默契暗号吗",opts:[
+    {txt:"超多，只有你们两个人懂",score:1},
+    {txt:"有一点点，是TA悄悄跟你建立的",score:2},
+    {txt:"和大家一起玩的通用梗",score:3},
+    {txt:"几乎没有，很难同频",score:9}
+  ]},
+  {q:"TA会不会好奇你的感情经历",opts:[
+    {txt:"主动打探，很在意你的过往",score:1},
+    {txt:"旁敲侧击，不敢直接问",score:5},
+    {txt:"闲聊随口一问，听过就忘",score:3},
+    {txt:"完全不关心，不主动提起",score:6}
+  ]},
+  {q:"过节的时候，TA给你的祝福",opts:[
+    {txt:"单独发专属祝福，带小小心意",score:1},
+    {txt:"单独编辑，不会群发，简短走心",score:2},
+    {txt:"群发模板，和别人一样",score:8},
+    {txt:"看到你的消息才回祝福，不会先发",score:9}
+  ]},
+  {q:"一群人出去玩，TA下意识靠近你吗",opts:[
+    {txt:"不自觉站在你旁边，照顾你的感受",score:1},
+    {txt:"想靠近，但又刻意保持距离",score:5},
+    {txt:"随机站，和谁近都可以",score:3},
+    {txt:"跟其他人扎堆，很少主动靠近你",score:9}
+  ]},
+  {q:"你稍微靠近TA，TA的反应？",opts:[
+    {txt:"不躲开，甚至主动靠近一点",score:1},
+    {txt:"紧张局促，表面装作淡定",score:5},
+    {txt:"自然接受，好朋友没关系",score:3},
+    {txt:"下意识拉开一点距离",score:6}
+  ]},
+  {q:"TA会不会跟你聊很深的心事、软肋",opts:[
+    {txt:"愿意对你敞开心扉，说很少和别人讲的话",score:1},
+    {txt:"慢慢试探，只敢说一点点",score:4},
+    {txt:"谁关系好就跟谁说，不止对你",score:6},
+    {txt:"一直保持距离，只聊轻松表面话题",score:8}
+  ]},
+  {q:"TA会不会吃你和别人玩得好的醋",opts:[
+    {txt:"明显吃醋，直接跟你表达",score:1},
+    {txt:"默默不开心，藏起来不直说",score:5},
+    {txt:"开玩笑调侃，没有真的介意",score:3},
+    {txt:"完全无所谓，觉得很正常",score:6}
+  ]},
+  {q:"TA会不会制造单独偶遇机会",opts:[
+    {txt:"会，刻意创造和你独处的机会",score:1},
+    {txt:"悄悄制造，假装是巧合",score:2},
+    {txt:"随缘碰到，没有刻意安排",score:4},
+    {txt:"偶遇就是真的碰巧，没有别的意思",score:8}
+  ]},
+  {q:"当你主动示好，TA的反馈？",opts:[
+    {txt:"积极接住，同步向你靠近",score:1},
+    {txt:"收到之后很开心，但不敢往前一步",score:2},
+    {txt:"接收到，但不会推进，保持现状",score:7},
+    {txt:"没get到你的心意，当成普通友好",score:9}
+  ]},
+  {q:"TA会不会规划和你的后续安排",opts:[
+    {txt:"主动约下次见面，提前想好行程",score:1},
+    {txt:"含糊说有空再约，不敢敲定时间",score:2},
+    {txt:"看当下心情，想到再说",score:7},
+    {txt:"不会主动规划，等你提",score:4}
+  ]},
+  {q:"TA朋友圈会对你开放全部内容吗",opts:[
+    {txt:"全部开放，不屏蔽你",score:1},
+    {txt:"开放，但不会发太直白的内容",score:2},
+    {txt:"和所有好友权限一致，没有特殊对待",score:6},
+    {txt:"有分组，部分内容看不到",score:10}
+  ]},
+  {q:"吵架/闹别扭之后，TA会？",opts:[
+    {txt:"主动低头，不想和你僵持",score:1},
+    {txt:"纠结很久，小心翼翼来找你和解",score:2},
+    {txt:"冷静一段时间，等情绪平复再说",score:4},
+    {txt:"顺其自然，不主动修复关系",score:10}
+  ]},
+  {q:"TA会不会跟你聊关于恋爱的看法",opts:[
+    {txt:"借话题试探你理想型，暗示自己",score:1},
+    {txt:"小心翼翼聊，观察你的态度",score:5},
+    {txt:"单纯讨论观点，没有指向你",score:3},
+    {txt:"避开恋爱话题，不想聊这个",score:10}
+  ]},
+  {q:"如果别人起哄你们俩，TA？",opts:[
+    {txt:"不否认，甚至有点开心",score:1},
+    {txt:"慌乱，快速转移话题，假装不在意",score:5},
+    {txt:"跟着一起开玩笑，当热闹看",score:3},
+    {txt:"认真澄清，强调只是朋友",score:6}
+  ]},
+  {q:"TA愿意为你调整自己的计划吗",opts:[
+    {txt:"优先迁就你的时间安排",score:1},
+    {txt:"可以微调，但不会大幅度改动",score:4},
+    {txt:"偶尔迁就，看当下想不想",score:7},
+    {txt:"以自己安排为主，很少妥协",score:10}
+  ]},
+  {q:"你觉得你们现在，阻碍是什么",opts:[
+    {txt:"两个人都在等对方先开口",score:1},
+    {txt:"TA害怕表白失败，失去现在的关系",score:2},
+    {txt:"氛围很好，差一点点心动火花",score:3},
+    {txt:"TA还在慢慢考察、了解你",score:4}
+  ]}
+];
+
+let current = 0;
+let score = {1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0};
+
+// 开始测试
+function startTest(){
+  document.getElementById('home').style.display='none';
+  document.getElementById('qWrap').style.display='block';
+  showQ();
+}
+function showQ(){
+  const item = questions[current];
+  document.getElementById('qIndex').innerText = `第${current+1}题 / 共${questions.length}题`;
+  document.getElementById('qTitle').innerText = item.q;
+  let html = '';
+  item.opts.forEach((o,i)=>{
+    html += `<button class="opt" onclick="choose(${o.score})">${o.txt}</button>`
+  })
+  document.getElementById('optBox').innerHTML = html;
+}
+function choose(s){
+  score[s]++;
+  current++;
+  if(current >= questions.length){
+    showResult();
+  }else{
+    showQ();
+  }
+}
+function showResult(){
+  document.getElementById('qWrap').style.display='none';
+  document.getElementById('resWrap').style.display='block';
+  // 取最高分
+  let maxKey = 1;
+  for(let k in score){
+    if(score[k] > score[maxKey]) maxKey = k;
+  }
+  const r = resultMap[maxKey];
+  document.getElementById('resTitle').innerText = r.name;
+  document.getElementById('resDesc').innerText = r.desc;
+}
+function restart(){
+  current=0;
+  score={1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0};
+  document.getElementById('resWrap').style.display='none';
+  document.getElementById('home').style.display='block';
+}
+</script>
+</body>
+</html>
